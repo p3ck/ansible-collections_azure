@@ -74,7 +74,6 @@
       user_assigned_identities:
         id:
           - "{{ user_identity_1 }}"
-          - "{{ user_identity_2 }}"
   register: iothub
 
 - name: Assert tht iot hub created
@@ -93,7 +92,6 @@
     that:
       - iothub.iothubs[0].identity.type == 'UserAssigned'
       - user_identity_1 in iothub.iothubs[0].identity.user_assigned_identities
-      - user_identity_2 in iothub.iothubs[0].identity.user_assigned_identities
 
 - name: Create IoT Hub (idempontent)
   azure_rm_iothub:
@@ -108,13 +106,42 @@
       user_assigned_identities:
         id:
           - "{{ user_identity_1 }}"
-          - "{{ user_identity_2 }}"
   register: iothub
 
 - name: Assert the iot hub created
   ansible.builtin.assert:
     that:
       - not iothub.changed
+
+- name: Update IoT Hub (identity)
+  azure_rm_iothub:
+    name: "hub{{ rpfx }}"
+    resource_group: "{{ resource_group }}"
+    identity:
+      type: UserAssigned
+      user_assigned_identities:
+        id:
+          - "{{ user_identity_2 }}"
+        append: false
+  register: iothub
+
+- name: Assert tht iot hub created
+  ansible.builtin.assert:
+    that:
+      - iothub.changed
+
+- name: Get the IoT Hub facts
+  azure_rm_iothub_info:
+    name: "hub{{ rpfx }}"
+    resource_group: "{{ resource_group }}"
+  register: iothub
+
+- name: Assert the IoT Hub facts
+  ansible.builtin.assert:
+    that:
+      - iothub.iothubs[0].identity.type == 'UserAssigned'
+      - iothub.iothubs[0].identity.user_assigned_identities | length == 1
+      - user_identity_2 in iothub.iothubs[0].identity.user_assigned_identities
 
 - name: Query IoT Hub
   azure_rm_iothub_info:
