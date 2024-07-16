@@ -257,7 +257,7 @@ class AzureRMModuleBaseExt(AzureRMModuleBase):
             else:
                 return True
 
-    def update_single_managed_identity(self, curr_identity, new_identity):
+    def update_single_managed_identity(self, curr_identity, new_identity, patch_support=False):
         # Converting from single_managed_identity_spec to managed_identity_spec
         new_identity = new_identity or dict()
         new_identity_converted = {
@@ -268,9 +268,12 @@ class AzureRMModuleBaseExt(AzureRMModuleBase):
             new_identity_converted['user_assigned_identities'] = {
                 'id': [user_assigned_identity]
             }
-        return self.update_managed_identity(curr_identity=curr_identity, new_identity=new_identity_converted, allow_identities_append=False)
+        return self.update_managed_identity(curr_identity=curr_identity,
+                                            new_identity=new_identity_converted,
+                                            allow_identities_append=False, patch_support=patch_support)
 
-    def update_managed_identity(self, curr_identity=None, new_identity=None, allow_identities_append=True):
+    def update_managed_identity(self, curr_identity=None, new_identity=None,
+                                allow_identities_append=True, patch_support=False):
         curr_identity = curr_identity or dict()
         # TODO need to remove self.module.params.get('identity', {})
         # after changing all modules to provide the "new_identity" parameter
@@ -289,25 +292,32 @@ class AzureRMModuleBaseExt(AzureRMModuleBase):
         if new_managed_type == 'None' or curr_managed_type != new_managed_type:
             changed = True
 
-        curr_user_assigned_identities = set(curr_identity.get('user_assigned_identities', {}).keys())
-        new_user_assigned_identities = set(new_identity.get('user_assigned_identities', {}).get('id', []))
+        curr_user_assigned_identities = set((curr_identity.get('user_assigned_identities') or {}).keys())
+        new_user_assigned_identities = set((new_identity.get('user_assigned_identities') or {}).get('id', []))
         result_user_assigned_identities = new_user_assigned_identities
+        clear_identities = []
+
+        result_identity = self.managed_identity['identity'](type=new_managed_type)
 
         # If type in module args contains 'UserAssigned'
         if allow_identities_append and \
            'UserAssigned' in new_managed_type and \
            new_identity.get('user_assigned_identities', {}).get('append', True) is True:
             result_user_assigned_identities = new_user_assigned_identities.union(curr_user_assigned_identities)
+        elif patch_support and 'UserAssigned' in new_managed_type:
+            clear_identities = curr_user_assigned_identities.difference(result_user_assigned_identities)
 
         # Check if module args identities are different as current ones
         if result_user_assigned_identities.difference(curr_user_assigned_identities) != set():
             changed = True
 
-        result_identity = self.managed_identity['identity'](type=new_managed_type)
-
-        # Append identities to the model
-        if len(result_user_assigned_identities) > 0:
+        # Update User Assigned identities to the model
+        if len(result_user_assigned_identities) > 0 or len(clear_identities) > 0:
             result_identity.user_assigned_identities = {}
+            # Set identity to None to remove it
+            for identity in clear_identities:
+                result_identity.user_assigned_identities[identity] = None
+            # Set identity to user_assigned to add it
             for identity in result_user_assigned_identities:
                 result_identity.user_assigned_identities[identity] = self.managed_identity['user_assigned']()
 
