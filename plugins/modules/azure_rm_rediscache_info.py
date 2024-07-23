@@ -339,7 +339,6 @@ class AzureRMRedisCacheInfo(AzureRMModuleBase):
             name=rediscache.name,
             location=rediscache.location,
             provisioning_state=rediscache.provisioning_state,
-            configuration=rediscache.redis_configuration,
             tenant_settings=rediscache.tenant_settings,
             minimum_tls_version=rediscache.minimum_tls_version,
             public_network_access=rediscache.public_network_access,
@@ -349,7 +348,9 @@ class AzureRMRedisCacheInfo(AzureRMModuleBase):
             static_ip=rediscache.static_ip,
             subnet=rediscache.subnet_id,
             host_name=rediscache.host_name,
-            tags=rediscache.tags
+            tags=rediscache.tags,
+            identity=rediscache.identity.as_dict() if rediscache.identity else None,
+            configuration=rediscache.redis_configuration.as_dict() if rediscache.redis_configuration else None
         )
 
         if rediscache.sku:
