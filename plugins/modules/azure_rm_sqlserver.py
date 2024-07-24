@@ -338,7 +338,7 @@ class AzureRMSqlServer(AzureRMModuleBaseExt):
             if key not in valid_user_assigned_keys:
                 errors.append("Invalid key {0}".format(key))
             if key == "append":
-                if isinstance(key, bool) is not True:
+                if isinstance(self.identity['user_assigned_identities'][key], bool) is not True:
                     errors.append("identity->user_assigned_identity->append must be True or False")
 
         if errors:
