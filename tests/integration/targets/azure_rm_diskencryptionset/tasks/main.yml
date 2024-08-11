@@ -5,6 +5,38 @@
     tenant_id: "{{ azure_tenant }}"
   run_once: true
 
+- name: Set identities base path
+  ansible.builtin.set_fact:
+    identity_base_path: "/subscriptions/{{ azure_subscription_id }}/resourcegroups/{{ resource_group }}/providers/Microsoft.ManagedIdentity"
+
+- name: Set identities IDs to test. Identities ansible-test-diskencriptionset-identity and ansible-test-diskencriptionset-identity-2 have to be created previously
+  ansible.builtin.set_fact:
+    user_identity_1: "{{ identity_base_path }}/userAssignedIdentities/ansible-test-diskencriptionset-identity"
+    user_identity_2: "{{ identity_base_path }}/userAssignedIdentities/ansible-test-diskencriptionset-identity-2"
+
+- name: Gather Resource Group info
+  azure.azcollection.azure_rm_resourcegroup_info:
+    name: "{{ resource_group }}"
+  register: __rg_info
+
+- name: Set location based on resource group
+  ansible.builtin.set_fact:
+    location: "{{ __rg_info.resourcegroups.0.location }}"
+
+- name: Create User Managed Identities
+  azure_rm_resource:
+    resource_group: "{{ resource_group }}"
+    provider: ManagedIdentity
+    resource_type: userAssignedIdentities
+    resource_name: "{{ item }}"
+    api_version: "2023-01-31"
+    body:
+      location: "{{ location }}"
+    state: present
+  loop:
+    - "ansible-test-diskencriptionset-identity"
+    - "ansible-test-diskencriptionset-identity-2"
+
 - name: Lookup service principal object id
   ansible.builtin.set_fact:
     object_id: "{{ lookup('azure.azcollection.azure_service_principal_attribute',
@@ -110,6 +142,7 @@
       - results.diskencryptionsets[0].active_key != None
       - results.diskencryptionsets[0].provisioning_state == "Succeeded"
       - results.diskencryptionsets[0].tags | length > 0
+      - results.diskencryptionsets[0].identity.type == 'SystemAssigned'
 
 - name: Delete disk encryption set
   azure_rm_diskencryptionset:
@@ -133,8 +166,104 @@
   ansible.builtin.assert:
     that: not results.changed
 
+- name: Create disk encryption set with UserAssigned Identity
+  azure_rm_diskencryptionset:
+    resource_group: "{{ resource_group }}"
+    name: "{{ set_name }}"
+    source_vault: "myvault{{ rpfx }}"
+    key_url: "{{ key_url }}"
+    state: present
+    identity:
+      type: UserAssigned
+      user_assigned_identities:
+        id:
+          - "{{ user_identity_1 }}"
+  register: results
+
+- name: Assert that disk encryption set is created
+  ansible.builtin.assert:
+    that: results.changed
+
+- name: Create disk encryption set (Idempotent test)
+  azure_rm_diskencryptionset:
+    resource_group: "{{ resource_group }}"
+    name: "{{ set_name }}"
+    source_vault: "myvault{{ rpfx }}"
+    key_url: "{{ key_url }}"
+    state: present
+    identity:
+      type: UserAssigned
+      user_assigned_identities:
+        id:
+          - "{{ user_identity_1 }}"
+  register: results
+
+- name: Assert that output is not changed
+  ansible.builtin.assert:
+    that: not results.changed
+
+- name: Update disk encryption set
+  azure_rm_diskencryptionset:
+    resource_group: "{{ resource_group }}"
+    name: "{{ set_name }}"
+    source_vault: "myvault{{ rpfx }}"
+    key_url: "{{ key_url }}"
+    state: present
+    identity:
+      type: UserAssigned
+      user_assigned_identities:
+        id:
+          - "{{ user_identity_2 }}"
+  register: results
+
+- name: Assert that disk encryption set is updated
+  ansible.builtin.assert:
+    that: results.changed
+
+- name: Get disk encryption set facts
+  azure_rm_diskencryptionset_info:
+    resource_group: "{{ resource_group }}"
+    name: "{{ set_name }}"
+  register: results
+
+- name: Assert the disk encryption facts
+  ansible.builtin.assert:
+    that:
+      - not results.changed
+      - results.diskencryptionsets[0].id != None
+      - results.diskencryptionsets[0].name == "{{ set_name }}"
+      - results.diskencryptionsets[0].active_key != None
+      - results.diskencryptionsets[0].provisioning_state == "Succeeded"
+      - results.diskencryptionsets[0].tags | length > 0
+      - results.diskencryptionsets[0].identity.type == 'UserAssigned'
+      - results.diskencryptionsets[0].identity.user_assigned_identities | length == 1
+      - results.diskencryptionsets[0].identity.user_assigned_identities['{{ user_identity_2 }}'] is defined
+
+- name: Delete disk encryption set
+  azure_rm_diskencryptionset:
+    resource_group: "{{ resource_group }}"
+    name: "{{ set_name }}"
+    state: absent
+  register: results
+
+- name: Assert that disk encryption set is deleted
+  ansible.builtin.assert:
+    that: results.changed
+
 - name: Delete the Key Vault
   azure_rm_keyvault:
     resource_group: "{{ resource_group }}"
     vault_name: "myvault{{ rpfx }}"
     state: absent
+
+- name: Destroy User Managed Identities
+  azure_rm_resource:
+    resource_group: "{{ resource_group }}"
+    provider: ManagedIdentity
+    resource_type: userAssignedIdentities
+    resource_name: "{{ item }}"
+    api_version: "2023-01-31"
+    state: absent
+  loop:
+    - "ansible-test-diskencriptionset-identity"
+    - "ansible-test-diskencriptionset-identity-2"
