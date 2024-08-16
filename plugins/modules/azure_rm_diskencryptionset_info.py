@@ -92,6 +92,7 @@ from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common
 
 try:
     from azure.core.exceptions import ResourceNotFoundError
+    from azure.mgmt.compute import ComputeManagementClient
 except Exception:
     # This is handled in azure_rm_common
     pass
@@ -118,8 +119,19 @@ class AzureRMDiskEncryptionSetInfo(AzureRMModuleBase):
         self.name = None
         self.resource_group = None
         self.tags = None
+        self._diskencryptionset_client = None
 
         super(AzureRMDiskEncryptionSetInfo, self).__init__(self.module_arg_spec, supports_check_mode=True, supports_tags=False, facts_module=True)
+
+    @property
+    def diskencryptionset_client(self):
+        self.log('Getting diskencryptionset client')
+        base_url=self._cloud_environment.endpoints.resource_manager
+        if not self._diskencryptionset_client:
+            self._diskencryptionset_client = self.get_mgmt_svc_client(ComputeManagementClient,
+                                                                      base_url=base_url,
+                                                                      api_version='2023-01-02')
+        return self._diskencryptionset_client
 
     def exec_module(self, **kwargs):
 
@@ -148,7 +160,7 @@ class AzureRMDiskEncryptionSetInfo(AzureRMModuleBase):
         results = []
         # get specific disk encryption set
         try:
-            item = self.compute_client.disk_encryption_sets.get(self.resource_group, self.name)
+            item = self.diskencryptionset_client.disk_encryption_sets.get(self.resource_group, self.name)
         except ResourceNotFoundError:
             pass
 
@@ -160,7 +172,7 @@ class AzureRMDiskEncryptionSetInfo(AzureRMModuleBase):
     def list_resource_group(self):
         self.log('List all disk encryption sets for resource group - {0}'.format(self.resource_group))
         try:
-            response = self.compute_client.disk_encryption_sets.list_by_resource_group(self.resource_group)
+            response = self.diskencryptionset_client.disk_encryption_sets.list_by_resource_group(self.resource_group)
         except ResourceNotFoundError as exc:
             self.fail("Failed to list for resource group {0} - {1}".format(self.resource_group, str(exc)))
 
@@ -173,7 +185,7 @@ class AzureRMDiskEncryptionSetInfo(AzureRMModuleBase):
     def list_items(self):
         self.log('List all disk encryption sets for a subscription ')
         try:
-            response = self.compute_client.disk_encryption_sets.list()
+            response = self.diskencryptionset_client.disk_encryption_sets.list()
         except ResourceNotFoundError as exc:
             self.fail("Failed to list all items - {0}".format(str(exc)))
 

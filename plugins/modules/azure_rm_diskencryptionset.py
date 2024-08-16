@@ -336,7 +336,7 @@ class AzureRMDiskEncryptionSet(AzureRMModuleBaseExt):
                 if self.source_vault:
                     source_vault = self.diskencryptionset_models.SourceVault(id=self.source_vault)
                     disk_encryption_set_new.active_key = \
-                        self.diskencryptionset_models.KeyVaultAndKeyReference(source_vault=source_vault,
+                        self.diskencryptionset_models.KeyForDiskEncryptionSet(source_vault=source_vault,
                                                                     key_url=self.key_url)
                 if self.tags:
                     disk_encryption_set_new.tags = self.tags
@@ -354,7 +354,7 @@ class AzureRMDiskEncryptionSet(AzureRMModuleBaseExt):
         update_identity, self.identity = self.update_managed_identity(
             curr_identity=old_identity,
             new_identity=safe_identity,
-            patch_support=True
+            patch_support=False
         )
         return update_identity
 

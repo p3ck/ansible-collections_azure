@@ -37,6 +37,32 @@
     - "ansible-test-diskencriptionset-identity"
     - "ansible-test-diskencriptionset-identity-2"
 
+- name: Lookup service principal object id for Identity-1
+  azure_rm_resource_info:
+    api_version: "2023-01-31"
+    resource_group: "{{ resource_group }}"
+    provider: ManagedIdentity
+    resource_type: userAssignedIdentities
+    resource_name: "ansible-test-diskencriptionset-identity"
+  register: output
+
+- name: Set Identity-1 Object Id
+  ansible.builtin.set_fact:
+    user_identity_1_object_id: "{{ output.response[0].properties.principalId }}"
+
+- name: Lookup service principal object id for Identity-2
+  azure_rm_resource_info:
+    api_version: "2023-01-31"
+    resource_group: "{{ resource_group }}"
+    provider: ManagedIdentity
+    resource_type: userAssignedIdentities
+    resource_name: "ansible-test-diskencriptionset-identity-2"
+  register: output
+
+- name: Set Identity-2 Object Id
+  ansible.builtin.set_fact:
+    user_identity_2_object_id: "{{ output.response[0].properties.principalId }}"
+
 - name: Lookup service principal object id
   ansible.builtin.set_fact:
     object_id: "{{ lookup('azure.azcollection.azure_service_principal_attribute',
@@ -56,6 +82,36 @@
       family: A
     access_policies:
       - tenant_id: "{{ tenant_id }}"
+        object_id: "{{ user_identity_1_object_id }}"
+        keys:
+          - get
+          - list
+          - wrapkey
+          - unwrapkey
+          - create
+          - update
+          - import
+          - delete
+          - backup
+          - restore
+          - recover
+          - purge
+      - tenant_id: "{{ tenant_id }}"
+        object_id: "{{ user_identity_2_object_id }}"
+        keys:
+          - get
+          - list
+          - wrapkey
+          - unwrapkey
+          - create
+          - update
+          - import
+          - delete
+          - backup
+          - restore
+          - recover
+          - purge
+      - tenant_id: "{{ tenant_id }}"
         object_id: "{{ object_id }}"
         keys:
           - get
@@ -70,6 +126,7 @@
           - restore
           - recover
           - purge
+    enable_purge_protection: True
 
 - name: Create a key in key vault
   azure_rm_keyvaultkey:
@@ -178,6 +235,8 @@
       user_assigned_identities:
         id:
           - "{{ user_identity_1 }}"
+    tags:
+      key1: "value1"
   register: results
 
 - name: Assert that disk encryption set is created
@@ -196,6 +255,8 @@
       user_assigned_identities:
         id:
           - "{{ user_identity_1 }}"
+    tags:
+      key1: "value1"
   register: results
 
 - name: Assert that output is not changed
@@ -214,6 +275,9 @@
       user_assigned_identities:
         id:
           - "{{ user_identity_2 }}"
+        append: False
+    tags:
+      key1: "value1"
   register: results
 
 - name: Assert that disk encryption set is updated
