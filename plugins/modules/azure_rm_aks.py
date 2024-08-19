@@ -225,6 +225,12 @@ options:
                 choices:
                     - azure
                     - kubenet
+            network_plugin_mode:
+                description:
+                    - Network plugin mode used for building the Kubernetes network.
+                type: str
+                choices:
+                    - Overlay
             network_policy:
                 description: Network policy used for building Kubernetes network.
                 type: str
@@ -308,6 +314,11 @@ options:
             managed:
                 description:
                     - Whether to enable managed AAD.
+                type: bool
+                default: false
+            enable_azure_rbac:
+                description:
+                    - Whether to enable Azure RBAC for Kubernetes authorization.
                 type: bool
                 default: false
             admin_group_object_ids:
@@ -689,6 +700,7 @@ def create_pod_identity_profile(pod_profile):
 def create_network_profiles_dict(network):
     return dict(
         network_plugin=network.network_plugin,
+        network_plugin_mode=network.network_plugin_mode,
         network_policy=network.network_policy,
         pod_cidr=network.pod_cidr,
         service_cidr=network.service_cidr,
@@ -831,6 +843,7 @@ agent_pool_profile_spec = dict(
 
 network_profile_spec = dict(
     network_plugin=dict(type='str', choices=['azure', 'kubenet']),
+    network_plugin_mode=dict(type='str', choices=['Overlay']),
     network_policy=dict(type='str', choices=['azure', 'calico']),
     pod_cidr=dict(type='str'),
     service_cidr=dict(type='str'),
@@ -847,6 +860,7 @@ aad_profile_spec = dict(
     server_app_secret=dict(type='str', no_log=True),
     tenant_id=dict(type='str'),
     managed=dict(type='bool', default='false'),
+    enable_azure_rbac=dict(type='bool', default='false'),
     admin_group_object_ids=dict(type='list', elements='str')
 )
 
@@ -1078,7 +1092,8 @@ class AzureRMManagedCluster(AzureRMModuleBaseExt):
                         to_be_updated = True
 
                     if response['api_server_access_profile'] != self.api_server_access_profile and self.api_server_access_profile is not None:
-                        if self.api_server_access_profile.get('enable_private_cluster') != response['api_server_access_profile'].get('enable_private_cluster'):
+                        if bool(self.api_server_access_profile.get('enable_private_cluster')) != \
+                           bool(response['api_server_access_profile'].get('enable_private_cluster')):
                             self.log(("Api Server Access Diff - Origin {0} / Update {1}"
                                      .format(str(self.api_server_access_profile), str(response['api_server_access_profile']))))
                             self.fail("The enable_private_cluster of the api server access profile cannot be updated")
