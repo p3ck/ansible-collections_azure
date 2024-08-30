@@ -1,5 +1,77 @@
 # Change Log
 
+## v2.7.0 (2024-08-30)
+
+### NEW MODULES
+  - azure_rm_afdendpoint: Add support for managed Azure Front Door Endpoint ([#1589](https://github.com/ansible-collections/azure/pull/1589))
+  - azure_rm_afdendpoint_info: Add support for get Azure Front Door Endpoint ([#1589](https://github.com/ansible-collections/azure/pull/1589))
+  - azure_rm_openshiftmanagedclusterversion_info: Add support to fetch Azure Red Hat OpenShift managed cluster ([#1602](https://github.com/ansible-collections/azure/pull/1602))
+
+### FEATURE ENHANCEMENT
+  - azure_rm_cdnprofile:
+    - Add support for `Standard` and `Premium` ([#1588](https://github.com/ansible-collections/azure/pull/1588))
+    - Add support for managed identity ([#1621](https://github.com/ansible-collections/azure/pull/1621))
+  - azure_rm_aduer: Add support for `password_force_change` and `password_force_change_mfa` ([#1376](https://github.com/ansible-collections/azure/pull/1376))
+  - azure_rm_appgateway: Add support managed identity ([#1598](https://github.com/ansible-collections/azure/pull/1598))
+  - azure_rm_batchaccount: Add support managed identity ([#1611](https://github.com/ansible-collections/azure/pull/1611))
+  - azure_rm_batchaccount_info: Add support managed identity ([#1611](https://github.com/ansible-collections/azure/pull/1611))
+  - azure_rm_iothub:
+    - Add support managed identity ([#1615](https://github.com/ansible-collections/azure/pull/1615))
+    - Upgrade `azure-mgmt-iothub` to `v3.0.0` ([#1641](https://github.com/ansible-collections/azure/pull/1641))
+  - azure_rm_adapplication: Add support for `app_diff` ([#1560](https://github.com/ansible-collections/azure/pull/1560))
+  - azure_rm_aduser: Add support for `mobile_phone` ([#1623](https://github.com/ansible-collections/azure/pull/1623))
+  - azure_rm_aduser_info: Add support for `mobile_phone` ([#1623](https://github.com/ansible-collections/azure/pull/1623))
+  - azure_rm_manageddisk_info: Add support for `time_created` ([#1638](https://github.com/ansible-collections/azure/pull/1638))
+  - azure_rm_storageaccount: Add support managed identity ([#1639](https://github.com/ansible-collections/azure/pull/1639))
+  - azure_rm_storageaccount_info: Add support managed identity ([#1639](https://github.com/ansible-collections/azure/pull/1639))
+  - pr-pipeline.yml:
+    - Add new resource group test location `westus2` ([#1642](https://github.com/ansible-collections/azure/pull/1642))
+    - Upgrade azure-mgmt-containerservice to v31.0.0 ([#1677](https://github.com/ansible-collections/azure/pull/1677))
+  - azure_rm_postgresqlflexibleserver: Add more options for `version` ([#1650](https://github.com/ansible-collections/azure/pull/1650))
+  - azure_rm_servicebus: Add support managed identity ([#1643](https://github.com/ansible-collections/azure/pull/1643))
+  - azure_rm_servicebus_info: Add support managed identity ([#1643](https://github.com/ansible-collections/azure/pull/1643))
+  - azure_rm_virtualnetwork_info: List usage of the subnets within a virtual network ([#1673](https://github.com/ansible-collections/azure/pull/1673))
+  - azure_rm_rediscache: Add support managed identity ([#1651](https://github.com/ansible-collections/azure/pull/1651))
+  - azure_rm_rediscache_info: Add support managed identity ([#1651](https://github.com/ansible-collections/azure/pull/1651))
+  - azure_rm_recoveryservicesvault: Add support managed identity ([#1678](https://github.com/ansible-collections/azure/pull/1678))
+  - azure_rm_recoveryservicesvault_info: Add support managed identity ([#1678](https://github.com/ansible-collections/azure/pull/1678))
+  - azure_rm_aksagent: Add support for `node_taints` ([#1685](https://github.com/ansible-collections/azure/pull/1685))
+  - azure_rm_aks: Add support for `auto_upgrade_profile` ([#1682](https://github.com/ansible-collections/azure/pull/1682))
+  - azure_rm_diskencryptionset: Add support managed identity ([#1676](https://github.com/ansible-collections/azure/pull/1676))
+  - azure_rm_sqlserver: Add support managed identity ([#1626](https://github.com/ansible-collections/azure/pull/1626))
+  - azure_rm_sqlserver_info: Add support managed identity ([#1626](https://github.com/ansible-collections/azure/pull/1626))
+  - azure_rm_cosmosdbaccount: Add support managed identity ([#1645](https://github.com/ansible-collections/azure/pull/1645))
+  - azure_rm_cosmosdbaccount_info: Add support managed identity ([#1645](https://github.com/ansible-collections/azure/pull/1645))
+  - azure_rm_functionapp: Add support managed identity` ([#1690](https://github.com/ansible-collections/azure/pull/1645))
+
+### BUG FIXING
+  - azure_rm_snapshot: Upgrade azure_rm_snapshot api-version to `v2022-03-02` ([#1597](https://github.com/ansible-collections/azure/pull/1597))
+  - azure_rm_storageblob: Fix auth mode login for `azure_rm_storageblob` ([#1605](https://github.com/ansible-collections/azure/pull/1605))
+  - azure_rm_postgresqlserver: Update the `admin_password` descriptions ([#1634](https://github.com/ansible-collections/azure/pull/1634))
+  - azure_rm_*: Update test case ([#1619](https://github.com/ansible-collections/azure/pull/1619))
+  - azure_rm_galleryimageversion: Wait 10 minutes to get the `imageversion` state ([#1625](https://github.com/ansible-collections/azure/pull/1625))
+  - azure_rm_openshiftmanagedcluster_info: Fixed errors caused by empty dictionary ([#1632](https://github.com/ansible-collections/azure/pull/1632))
+  - azure_rm_galleryimageversion_info: Check for presence of key instead of value ([#1637](https://github.com/ansible-collections/azure/pull/1637))
+  - azure_rm_openshiftmanagedcluster: Enhance null check ([#1629](https://github.com/ansible-collections/azure/pull/1629))
+  - azure_rm_openshiftmanagedclusterkubeconfig_info: Update client ([#1631](https://github.com/ansible-collections/azure/pull/1631))
+  - azure_rm: Implement long running polling for inventory plugin([#1649](https://github.com/ansible-collections/azure/pull/1649))
+  - azure_rm_manageddisk: Fix update bug ([#1666](https://github.com/ansible-collections/azure/pull/1666))
+  - azure_rm_postgresqlconfiguration: Fix SDK call to use Configuration class ([#1670](https://github.com/ansible-collections/azure/pull/1670))
+  - azure_rm_virtualmachineextension: Enable automatic update for vm extensions ([#1662](https://github.com/ansible-collections/azure/pull/1662))
+  - azure_rm_virtualnetwork: Fix the bug that failed to detect IPV6 ([#1652](https://github.com/ansible-collections/azure/pull/1652))
+  - azure_rm_virtualmachinescaleset: Fixed the issue that tags cannot be updated ([#1654](https://github.com/ansible-collections/azure/pull/1654))
+  - azure_rm_aksagentpool: Ignore `node_public_ip_prefix_id` when updating AKS pool ([#1668](https://github.com/ansible-collections/azure/pull/1668))
+  - azure_rm_aksagentpool_info: Ignore `node_public_ip_prefix_id` when updating AKS pool  ([#1668](https://github.com/ansible-collections/azure/pull/1668))
+  - azure_rm_virtualmachine: Fix latest image version not returned ([#1669](https://github.com/ansible-collections/azure/pull/1669))
+  - azure_rm_networkinterface:
+    - Set primary key when the `ip_configuration` has more than 2 ([#1679](https://github.com/ansible-collections/azure/pull/1679))
+    - Add support for create second `ip_configuration` ([#1686](https://github.com/ansible-collections/azure/pull/1686))
+  - azure_rm_loadbalancer: Fixed load balancing idempotent issue ([#1688](https://github.com/ansible-collections/azure/pull/1688))
+  - azure_rm_cdnprofile: Fixed a bug when identity is None ([#1689](https://github.com/ansible-collections/azure/pull/1689))
+  - azure_rm_cdnprofile_info: Fixed a bug when identity is None ([#1689](https://github.com/ansible-collections/azure/pull/1689))
+  - azure_rm_diskencryptionset_info: Fixed a bug when identity is None ([#1689](https://github.com/ansible-collections/azure/pull/1689))
+
+
 ## v2.6.0 (2024-07-01)
 
 ### FEATURE ENHANCEMENT
