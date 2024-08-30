@@ -151,7 +151,8 @@ options:
             application_security_groups:
                 description:
                     - List of application security groups in which the IP configuration is included.
-                    - Element of the list could be a resource id of application security group, or dict of I(resource_group) and I(name).
+                    - Element of the list could be a resource id of application security group, or the name of the application
+                      security group located in the current resource group, or a dictionary with resource groups and names.
                 type: list
                 elements: raw
     enable_accelerated_networking:
@@ -633,8 +634,8 @@ class AzureRMNetworkInterface(AzureRMModuleBaseExt):
         self.security_group = self.parse_resource_to_dict(self.security_group or self.name)
 
         # if application security groups set, convert to resource id format
+        primary_flag = False
         if self.ip_configurations:
-            primary_flag = False
             for config in self.ip_configurations:
                 if config.get('primary'):
                     primary_flag = True
@@ -642,14 +643,19 @@ class AzureRMNetworkInterface(AzureRMModuleBaseExt):
                     asgs = []
                     for asg in config['application_security_groups']:
                         asg_resource_id = asg
-                        if isinstance(asg, str) and (not is_valid_resource_id(asg)):
-                            asg = self.parse_resource_to_dict(asg)
-                        if isinstance(asg, dict):
-                            asg_resource_id = format_resource_id(val=asg['name'],
-                                                                 subscription_id=self.subscription_id,
-                                                                 namespace='Microsoft.Network',
-                                                                 types='applicationSecurityGroups',
-                                                                 resource_group=asg['resource_group'])
+                        if isinstance(asg, str):
+                            if is_valid_resource_id(asg):
+                                asg = self.parse_resource_to_dict(asg)
+                            else:
+                                asg = dict(name=asg)
+                        else:
+                            if asg.get('name') is None:
+                                self.fail("If the element of application_security_groups is a dictionary, you must define 'name'.")
+                        asg_resource_id = format_resource_id(val=asg['name'],
+                                                             subscription_id=self.subscription_id,
+                                                             namespace='Microsoft.Network',
+                                                             types='applicationSecurityGroups',
+                                                             resource_group=asg.get('resource_group', self.resource_group))
                         asgs.append(asg_resource_id)
                     if len(asgs) > 0:
                         config['application_security_groups'] = asgs
@@ -735,8 +741,20 @@ class AzureRMNetworkInterface(AzureRMModuleBaseExt):
                 # name, private_ip_address, public_ip_address_name, private_ip_allocation_method, subnet_name
                 ip_configuration_result = self.construct_ip_configuration_set(results['ip_configurations'])
                 ip_configuration_request = self.construct_ip_configuration_set(self.ip_configurations)
-                if not skip_compare and not self.default_compare({}, ip_configuration_request, ip_configuration_result, '', dict(compare=[])):
-                    changed = True
+                if skip_compare:
+                    self.ip_configurations = results['ip_configurations']
+                else:
+                    if not primary_flag:
+                        self.ip_configurations[0]['primary'] = False
+                    if not self.default_compare({}, ip_configuration_request, ip_configuration_result, '', dict(compare=[])):
+                        changed = True
+                        ip_configuration_request_name = [item['name'] for item in ip_configuration_request]
+                        for item_result in results['ip_configurations']:
+                            if item_result['name'] not in ip_configuration_request_name:
+                                if primary_flag and item_result.get('primary'):
+                                    self.fail("Both the service and playbook  ip configuration have primary keys. Please confirm which primary key is used")
+                                self.ip_configurations.append(item_result)
+
             elif self.state == 'absent':
                 self.log("CHANGED: network interface {0} exists but requested state is 'absent'".format(self.name))
                 changed = True
@@ -903,9 +921,9 @@ class AzureRMNetworkInterface(AzureRMModuleBaseExt):
             application_security_groups=(set([to_native(asg_id) for asg_id in item.get('application_security_groups')])
                                          if item.get('application_security_groups') else None),
             name=to_native(item.get('name')),
-            private_ip_address=to_native(item.get('private_ip_address')),
             private_ip_address_version=to_native(item.get('private_ip_address_version')),
-            public_ip_allocation_method=to_native(item.get('public_ip_allocation_method', 'Dynamic'))
+            public_ip_allocation_method=to_native(item.get('public_ip_allocation_method', 'Dynamic')),
+            primary=bool(item.get('primary'))
         ) for item in raw]
         return configurations
 
