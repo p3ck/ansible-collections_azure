@@ -19,7 +19,7 @@
 
 - name: Set location and managed_identity_ids
   ansible.builtin.set_fact:
-    location: "{{ __rg_info.resourcegroups.0.location }}"
+    location: westus2
     managed_identity_ids: []
 
 - name: Create user managed identities
