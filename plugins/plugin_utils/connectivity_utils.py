@@ -30,7 +30,7 @@ except ImportError:
 from ansible_collections.azure.azcollection.plugins.plugin_utils import file_utils
 from ansible_collections.azure.azcollection.plugins.plugin_utils import constants as consts
 
-from ansible.errors import AnsibleParserError, AnsibleError
+from ansible.errors import AnsibleError
 
 
 # Get the Access Details to connect to Arc Connectivity platform from the HybridConnectivity RP
@@ -127,7 +127,7 @@ def _create_service_configuration(rest_client, resource_uri, port):
         port = '22'
 
     url = f"/{resource_uri}/providers/Microsoft.HybridConnectivity/endpoints/default/serviceConfigurations/SSH"
-    body = {'properties': {'port': int(port), 'serviceName': 'SSH' }}
+    body = {'properties': {'port': int(port), 'serviceName': 'SSH'}}
 
     hostname = parse_resource_id(resource_uri)["name"]
     resource_group = parse_resource_id(resource_uri)["resource_group"]
@@ -340,13 +340,14 @@ def _get_client_operating_system():
         raise AnsibleError(f"Unsuported OS: {operating_system} platform is not currently supported")
     return operating_system
 
+
 def resource(client,
              url,
              method,
              body=None,
-             query_parameters={},
-             header_parameters={},
-             status_code = [200, 201, 202]):
+             query_parameters=None
+             header_parameters=None
+             status_code=[200, 201, 202]):
 
     query_parameters['api-version'] = '2023-03-15'
     header_parameters['Content-Type'] = 'application/json; charset=utf-8'
